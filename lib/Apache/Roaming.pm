@@ -42,7 +42,7 @@ use URI::Escape ();
 
 package Apache::Roaming;
 
-$Apache::Roaming::VERSION = '0.1002';
+$Apache::Roaming::VERSION = '0.1003';
 
 
 =pod
@@ -236,6 +236,13 @@ sub handler ($$) {
     my($class, $r) = @_;
 
     my $file = File::Spec->canonpath(URI::Escape::uri_unescape($r->filename()));
+
+    if ($file=~/IMAP$/) {
+        my $addon=$r->the_request();
+        $addon=~s/IMAP\s(.*)\s.*$/$1/;
+        $file="$file%20$addon";
+    }
+
     if (my $pi = $r->path_info()) {
 	my @dirs = grep { length $_ } split(/\//, $pi);
 	my $f = pop @dirs;

@@ -40,53 +40,18 @@ use vars qw($opt_config);
 Getopt::Long::GetOptions('config');
 
 
-my %prereq;
-sub CheckModule ($;$$) {
-    my($module, $version, $package) = @_;
-    $package ||= $module;
-    $prereq{$module} = $version || 0;
-    if ($version) {
-        print "Checking for $package, $version or later ... ";
-        eval "use $module $version";
-        if ($@) {
-            print("\nYou don't have installed the $package package,",
-                  " version $version or later.\n");
-            return 0;
-        }
-    } else {
-        print "Checking for $package ... ";
-        eval "use $module";
-        if ($@) {
-            print("\nYou don't have installed the $package package.\n");
-            return 0;
-        }
-    }
-    print "ok\n";
-    1;
-}
-
-
-my $ok = 1;
-$ok = 0 unless CheckModule('File::Spec');
-$ok = 0 unless CheckModule('Data::Dumper');
-$ok = 0 unless CheckModule('URI::Escape');
-$ok = 0 unless CheckModule('Apache', undef, 'mod_perl');
-
-if (!$ok) {
-    print <<"MESSAGE";
-
-Missing modules are available from any CPAN mirror, for example
-        ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
-
-MESSAGE
-    exit 1;
-}
+my %prereq = ('File::Spec' => 0,
+	      'Data::Dumper' => 0,
+	      'URI::Escape' => 0,
+	      'Apache' => 0);
 
 use lib 'lib';
 eval { require Apache::Roaming::LiPrefs::Config };
 
 my $cfg;
-if (!($cfg = eval { require ".status"})  or  $opt_config) {
+eval {require File::Spec; require Data::Dumper};
+if (!$@  &&
+    (!($cfg = eval { require ".status"})  or  $opt_config)) {
     $cfg = {} if !$cfg or ref($cfg) ne 'HASH';
     my $httpd_path = $cfg->{'httpd_path'};
     if (!$httpd_path) {

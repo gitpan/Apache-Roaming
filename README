@@ -52,8 +52,8 @@ DESCRIPTION
 
     *       Directories are created automatically.
 
-    *       The module is subclassable, so that you can create profiles on the
-            fly or parse and modify the user preferences. See the
+    *       The module is subclassable, so that you can create profiles on
+            the fly or parse and modify the user preferences. See the
             Apache::Roaming::LiPrefs(3) manpage for an example subclass.
 
 INSTALLATION
@@ -113,19 +113,19 @@ NETSCAPE COMMUNICATOR CONFIGURATION
     your profile files being located under http://your.host/roaming, do the
     following:
 
-    1.)     Create a directory /home/httpd/html/roaming. Make it writable by the
-            web server and noone else, for example by doing a
+    1.)     Create a directory /home/httpd/html/roaming. Make it writable by
+            the web server and noone else, for example by doing a
 
                 mkdir /home/httpd/html/roaming
                 chown nobody /home/httpd/html/roaming
                     # Insert your web servers UID here
                 chmod 700 /home/httpd/html/roaming
 
-    2.)     Start your communicator and open Preferences/Roaming User. Click the
-            "Enable Roaming Access for this profile" checkbox.
+    2.)     Start your communicator and open Preferences/Roaming User. Click
+            the "Enable Roaming Access for this profile" checkbox.
 
-    3.)     Open Preferences/Roaming User/Server Information. Click the "HTTP
-            Server" checkbox and enter the Base URL
+    3.)     Open Preferences/Roaming User/Server Information. Click the
+            "HTTP Server" checkbox and enter the Base URL
             "http://your.host/roaming/$USERID".
 
     That's all. Now hit the Ok button. A directory with the name of your

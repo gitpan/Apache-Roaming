@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-#   $Id: LiPrefs.pm,v 1.1.1.1 1999/01/06 13:12:52 joe Exp $
+#   $Id: LiPrefs.pm,v 1.2 1999/04/23 15:29:47 joe Exp $
 #
 #
 #   Apache::Roaming - A mod_perl handler for Roaming Profiles
@@ -31,12 +31,13 @@ require 5.004;
 use strict;
 
 
-require Apache::Roaming;
+use Apache::Roaming ();
+use Apache::File ();
 
 
 package Apache::Roaming::LiPrefs;
 
-$Apache::Roaming::LiPrefs::VERSION = '0.1000';
+$Apache::Roaming::LiPrefs::VERSION = '0.1002';
 @Apache::Roaming::LiPrefs::ISA = qw(Apache::Roaming);
 
 
@@ -217,6 +218,7 @@ sub GET_liprefs {
     $r->content_type('text/plain');
     $r->no_cache(1);
     $r->header_out('content_length', length($contents));
+    $r->set_last_modified(time());
     $r->send_http_header();
     if (!$r->header_only()) {
 	$r->print($contents);

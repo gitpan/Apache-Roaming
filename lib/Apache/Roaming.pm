@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-#   $Id: Roaming.pm,v 1.3 1999/02/13 00:24:45 joe Exp $
+#   $Id: Roaming.pm,v 1.4 1999/04/23 15:29:45 joe Exp $
 #
 #
 #   Apache::Roaming - A mod_perl handler for Roaming Profiles
@@ -32,6 +32,7 @@ use strict;
 
 
 use Apache ();
+use Apache::File ();
 use File::Spec ();
 use File::Path ();
 use File::Basename ();
@@ -41,7 +42,7 @@ use URI::Escape ();
 
 package Apache::Roaming;
 
-$Apache::Roaming::VERSION = '0.1001';
+$Apache::Roaming::VERSION = '0.1002';
 
 
 =pod
@@ -131,7 +132,8 @@ build Apache:
     cd mod_perl-1.16
     perl Makefile.PL APACHE_SRC=../apache_1.3.X/src DO_HTTPD=1 \
         USE_APACI=1 PERL_METHOD_HANDLERS=1 PERL_AUTHEN=1 \
-        PERL_CLEANUP=1 PREP_HTTPD=1 PERL_STACKED_HANDLERS=1
+        PERL_CLEANUP=1 PREP_HTTPD=1 PERL_STACKED_HANDLERS=1 \
+	PERL_FILE_API=1
     cd ../apache-1.3.3
     ./configure --activate-module=src/modules/perl/libperl.a
     make
@@ -458,17 +460,19 @@ sub GET {
 	$self->{'status'} = Apache::Constants::NOT_FOUND();
 	die "No such file: $file";
     }
-    my $length = (stat _)[7];
+#    return Apache::DECLINED();
+    my($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime) = stat _;
     my $fh = Symbol::gensym();
     if (!open($fh, "<$file")  ||  !binmode($fh)) {
-	die "Failed to open file $file: $!";
+  	die "Failed to open file $file: $!";
     }
+    $r->set_last_modified($mtime);
     $r->content_type('text/plain');
     $r->no_cache(1);
-    $r->header_out('content_length', $length);
+    $r->header_out('content_length', $size);
     $r->send_http_header();
     if (!$r->header_only()) {
-	$r->send_fd($fh) or die $!;
+  	$r->send_fd($fh) or die $!;
     }
     return Apache::OK();
 }

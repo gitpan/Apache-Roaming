@@ -1,3 +1,8 @@
+1999-04-23  Jochen Wiedmann  <joe@ispsoft.de> (0.1002)
+
+	* lib/Apache/Roaming.pm (GET): The Last-Modified header is
+	  now set. This requires compiling mod_perl with PERL_FILE_API=1.
+
 1999-02-12  Jochen Wiedmann  <joe@ispsoft.de> (0.1001)
 
 	* Roaming.pm (handler): Added use of uri_escape.

@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-#   $Id$
+#   $Id: LiPrefs.pm,v 1.1.1.1 1999/01/06 13:12:52 joe Exp $
 #
 #
 #   Apache::Roaming - A mod_perl handler for Roaming Profiles

@@ -1,0 +1,5 @@
+1999-02-12  Jochen Wiedmann  <joe@ispsoft.de> (0.1001)
+
+	* Roaming.pm (handler): Added use of uri_escape.
+	* Added some words on the browser configuration to the docs.
+	* Test suite should now work with dynamic modules.

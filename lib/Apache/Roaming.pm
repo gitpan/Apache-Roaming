@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-#   $Id$
+#   $Id: Roaming.pm,v 1.3 1999/02/13 00:24:45 joe Exp $
 #
 #
 #   Apache::Roaming - A mod_perl handler for Roaming Profiles
@@ -31,16 +31,17 @@ require 5.004;
 use strict;
 
 
-require Apache;
-require File::Spec;
-require File::Path;
-require File::Basename;
-require Symbol;
+use Apache ();
+use File::Spec ();
+use File::Path ();
+use File::Basename ();
+use Symbol ();
+use URI::Escape ();
 
 
 package Apache::Roaming;
 
-$Apache::Roaming::VERSION = '0.1000';
+$Apache::Roaming::VERSION = '0.1001';
 
 
 =pod
@@ -82,7 +83,19 @@ any Netscape Communicator 4.5 that can access the server.
 The source is based on mod_roaming by Vincent Partington
 <vincentp@xs4all.nl>, see
 
+    http://www.xs4all.nl/~vincentp/software/mod_roaming.html
+
+Vincent in turn was inspired by a Perl script from Frederik
+Vermeulen <Frederik.Vermeulen@imec.be>, see
+
     http://www.esat.kuleuven.ac.be/~vermeule/roam/put
+
+Compared to Apache::Roaming, this script doesn't need mod_perl. On
+the other hand it doesn't support the MOVE method, thus you need
+to set the li.prefs.http.useSimplePut attribute in your Netscape
+preferences. Due to the missing MOVE method, it may be even slower
+than Apache::Roaming and perhaps a little bit less stable.
+
 
 The modules features are:
 
@@ -161,6 +174,41 @@ to your srm.conf or access.conf:
 That's it!
 
 
+=head1 NETSCAPE COMMUNICATOR CONFIGURATION
+
+Assuming your document root directory is /home/httpd/html and you
+want your profile files being located under http://your.host/roaming,
+do the following:
+
+=over 8
+
+=item 1.)
+
+Create a directory /home/httpd/html/roaming. Make it writable by the
+web server and noone else, for example by doing a
+
+    mkdir /home/httpd/html/roaming
+    chown nobody /home/httpd/html/roaming
+	# Insert your web servers UID here
+    chmod 700 /home/httpd/html/roaming
+
+=item 2.)
+
+Start your communicator and open Preferences/Roaming User. Click the
+"Enable Roaming Access for this profile" checkbox.
+
+=item 3.)
+
+Open Preferences/Roaming User/Server Information. Click the "HTTP Server"
+checkbox and enter the Base URL "http://your.host/roaming/$USERID".
+
+=back
+
+That's all. Now hit the Ok button. A directory with the name of your
+user id should automatically be generated under /roaming and files
+should be stored there.
+
+
 =head1 METHOD INTERFACE
 
 As already said, the Apache::Roaming module is subclassable. You can
@@ -185,7 +233,7 @@ methods.
 sub handler ($$) {
     my($class, $r) = @_;
 
-    my $file = File::Spec->canonpath($r->filename());
+    my $file = File::Spec->canonpath(URI::Escape::uri_unescape($r->filename()));
     if (my $pi = $r->path_info()) {
 	my @dirs = grep { length $_ } split(/\//, $pi);
 	my $f = pop @dirs;
@@ -579,5 +627,16 @@ L<Apache(3)>, L<mod_perl(3)>
 
 An example subclass is Apache::Roaming::LiPrefs.
 See L<Apache::Roaming::LiPrefs(3)>.
+
+A C module for Apache is mod_roaming, by Vincent Partington
+<vincentp@xs4all.nl>, see
+
+    http://www.xs4all.nl/~vincentp/software/mod_roaming.html
+
+
+Frederic Vermeulen <Frederik.Vermeulen@imec.be> has written a CGI
+binary for roaming profiles. It's missing a MOVE method, though.
+
+    http://www.esat.kuleuven.ac.be/~vermeule/roam/put
 
 =cut

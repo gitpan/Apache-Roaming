@@ -22,7 +22,7 @@ sub Request ($$$;$$@) {
     Test($req);
     $req->content_type($type) if defined($type);
     $req->content($contents) if defined($contents);
-    $req->authorization_basic('joe', 'eoj');
+    $req->authorization_basic('foo bar', 'eoj');
     while (@headers) {
 	my $key = shift @headers;
 	my $val = shift @headers;
@@ -60,7 +60,7 @@ eval {
     unlink $cfg->{'pid_file'} if -f $cfg->{'pid_file'};
     open(USER, ">$cfg->{'user_file'}")
 	or die "Error while creating user file: $!";
-    printf USER ("%s:%s\n", "joe", crypt("eoj", "joe"))
+    printf USER ("%s:%s\n", "foo bar", crypt("eoj", "foo bar"))
 	or die "Error while writing user file: $!";
     close(USER)
 	or die "Error while closing user file: $!";
@@ -81,6 +81,7 @@ $SIG{'ALRM'} = sub { KillHttpd() };
 
 if (!open(CONF, ">$cfg->{'httpd_conf'}")  ||
     !(print CONF <<"EOF")  ||  !close(CONF)) {
+$cfg->{'dynamic_module_list'}
 ServerRoot $cfg->{'t_dir'}
 User $cfg->{'httpd_user'}
 Group $cfg->{'httpd_group'}
@@ -93,6 +94,7 @@ TransferLog $cfg->{'access_log'}
 LockFile $cfg->{'lock_file'}
 ResourceConfig $cfg->{'srm_conf'}
 AccessConfig $cfg->{'access_conf'}
+TypesConfig $cfg->{'types_conf'}
 
 PerlModule Apache::Roaming
 <Directory $cfg->{'roaming_dir'}>
@@ -128,9 +130,9 @@ Test($ua);
 
 sleep 5;
 my $contents = 'abcdef';
-my $testfile = File::Spec->catdir($cfg->{'roaming_dir'}, "joe", "test");
+my $testfile = File::Spec->catdir($cfg->{'roaming_dir'}, "foo bar", "test");
 unlink $testfile;
-Request($ua, 'PUT', '/roaming/joe/test', 'text/plain', $contents);
+Request($ua, 'PUT', '/roaming/foo bar/test', 'text/plain', $contents);
 TestContents($testfile, $contents);
 
 my $block = '';
@@ -138,35 +140,35 @@ for (my $i = 0;  $i < 256;  $i++) {
     $block .= chr($i);
 }
 my $contents2 = $block x 40;
-my $testfile2 = File::Spec->catdir($cfg->{'roaming_dir'}, "joe", "test2");
+my $testfile2 = File::Spec->catdir($cfg->{'roaming_dir'}, "foo bar", "test2");
 unlink $testfile2;
-Request($ua, 'PUT', '/roaming/joe/test2', 'text/plain', $contents2);
+Request($ua, 'PUT', '/roaming/foo bar/test2', 'text/plain', $contents2);
 TestContents($testfile2, $contents2);
 
-my $res = Request($ua, 'GET', '/roaming/joe/test');
+my $res = Request($ua, 'GET', '/roaming/foo bar/test');
 Test($res->content()  and  ($res->content() eq $contents));
-$res = Request($ua, 'GET', '/roaming/joe/test2');
+$res = Request($ua, 'GET', '/roaming/foo bar/test2');
 Test($res->content()  and  ($res->content() eq $contents2));
 
 
-my $testfile3 = File::Spec->catdir($cfg->{'roaming_dir'}, "joe", "test3");
+my $testfile3 = File::Spec->catdir($cfg->{'roaming_dir'}, "foo bar", "test3");
 unlink $testfile3;
-Request($ua, 'MOVE', '/roaming/joe/test', undef, undef,
-	'New-uri' => '/roaming/joe/test3');
-$res = Request($ua, 'GET', '/roaming/joe/test3');
+Request($ua, 'MOVE', '/roaming/foo bar/test', undef, undef,
+	'New-uri' => '/roaming/foo bar/test3');
+$res = Request($ua, 'GET', '/roaming/foo bar/test3');
 Test($res->content()  and  ($res->content() eq $contents));
 Test(!-f $testfile);
-my $testfile4 = File::Spec->catdir($cfg->{'roaming_dir'}, "joe", "test3");
+my $testfile4 = File::Spec->catdir($cfg->{'roaming_dir'}, "foo bar", "test3");
 unlink $testfile4;
-Request($ua, 'MOVE', '/roaming/joe/test2', undef, undef,
- 	'New-uri' => '/roaming/joe/test4');
-$res = Request($ua, 'GET', '/roaming/joe/test4');
+Request($ua, 'MOVE', '/roaming/foo bar/test2', undef, undef,
+ 	'New-uri' => '/roaming/foo bar/test4');
+$res = Request($ua, 'GET', '/roaming/foo bar/test4');
 Test($res->content()  and  ($res->content() eq $contents2));
 Test(!-f $testfile2);
 
-Request($ua, 'DELETE', '/roaming/joe/test3');
+Request($ua, 'DELETE', '/roaming/foo bar/test3');
 Test(!-f $testfile3);
-Request($ua, 'DELETE', '/roaming/joe/test4');
+Request($ua, 'DELETE', '/roaming/foo bar/test4');
 Test(!-f $testfile4);
 
 sleep 5;

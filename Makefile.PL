@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-#   $Id$
+#   $Id: Makefile.PL,v 1.2 1999/02/13 00:24:43 joe Exp $
 #
 #
 #   Apache::Roaming - A mod_perl handler for Roaming Profiles
@@ -67,9 +67,11 @@ sub CheckModule ($;$$) {
 
 
 my $ok = 1;
-$ok &&= CheckModule('File::Spec');
-$ok &&= CheckModule('Data::Dumper');
-$ok &&= CheckModule('Apache', undef, 'mod_perl');
+$ok = 0 unless CheckModule('File::Spec');
+$ok = 0 unless CheckModule('Data::Dumper');
+$ok = 0 unless CheckModule('URI::Escape');
+$ok = 0 unless CheckModule('Apache', undef, 'mod_perl');
+
 if (!$ok) {
     print <<"MESSAGE";
 
@@ -98,6 +100,44 @@ if (!($cfg = eval { require ".status"})  or  $opt_config) {
     }
     $cfg->{'httpd_path'} = prompt("Path of the Apache server: ",
 				  $httpd_path || '/usr/sbin/httpd');
+    die "Cannot execute HTTPD server $cfg->{'httpd_path'}: No such file"
+	unless -x $cfg->{'httpd_path'};
+
+    my $httpd_V_output = `$cfg->{'httpd_path'} -V`;
+    my $httpd_conf_path =
+	($httpd_V_output =~ /\s+-D\s+SERVER_CONFIG_FILE="(.*?)"/) ?
+	    $1 : "/etc/httpd/httpd.conf";
+    $cfg->{'httpd_conf_path'} = prompt("Path of the httpd.conf file: ",
+				       $httpd_conf_path);
+    my $httpd_conf_contents;
+    die "Failed to read httpd config file $cfg->{'httpd_conf_path'}: $!"
+	unless open(FILE, "<$cfg->{'httpd_conf_path'}");
+
+    my(@module_list, $server_root);
+    while (defined(my $line = <FILE>)) {
+	if ($line =~ /\s*ServerRoot\s+\"?(.*?)\"?\s*$/) {
+	    $server_root = $1;
+	}
+	if ($line =~ /^\s*(AddModule|LoadModule)\s+/  ||
+	    $line =~ /^\s*ClearModuleList\s*$/) {
+	    push(@module_list, $line);
+	}
+    }
+    close(FILE);
+    @module_list = map {
+	if ($_ =~ /^\s*LoadModule\s+(\S+)\s+(.*)/) {
+	    my $module = $1;
+	    my $path = $2;
+	    if ($path !~ /^\//) {
+		die "Cannot parse httpd config file $cfg->{'httpd_conf_path'}:"
+		    . " Missing ServerRoot" unless $server_root;
+		$_ = "LoadModule $module $server_root/$path\n";
+	    }
+	}
+	$_;
+    } @module_list;
+    $cfg->{'dynamic_module_list'} = join("", @module_list);
+
     $cfg->{'httpd_user'} = prompt("HTTPD's UID for running tests: ",
 				  $cfg->{'httpd_user'} || ('#' . $>));
     my $gid = $);
@@ -111,6 +151,7 @@ if (!($cfg = eval { require ".status"})  or  $opt_config) {
     $cfg->{'httpd_conf'} = File::Spec->catfile($tdir, "httpd.cnf");
     $cfg->{'access_conf'} = File::Spec->catfile($tdir, "access.cnf");
     $cfg->{'srm_conf'} = File::Spec->catfile($tdir, "srm.cnf");
+    $cfg->{'types_conf'} = File::Spec->catfile($tdir, "mime.types");
     $cfg->{'user_file'} = File::Spec->catfile($tdir, "htusers");
     my $log_dir = File::Spec->catdir($tdir, "logs");
     $cfg->{'log_dir'} = $log_dir;
@@ -241,6 +282,9 @@ if (!open(CONF, ">$cfg->{'access_conf'}")  ||  !close(CONF)) {
 }
 if (!open(CONF, ">$cfg->{'srm_conf'}")  ||  !close(CONF)) {
     die "Error while writing $cfg->{'srm_conf'}: $!";
+}
+if (!open(CONF, ">$cfg->{'types_conf'}")  ||  !close(CONF)) {
+    die "Error while writing $cfg->{'types_conf'}: $!";
 }
 
 my $config_dir = File::Spec->catdir(File::Spec->curdir(),
